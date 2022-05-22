@@ -33,9 +33,36 @@ foreach ($i in $host_B) {
     $host_id_B = $host_id_B + $ent.entities.entityId
 }
 
-#next values discovered manually via DT API ....
-$objectId_A = '' #copy id value here from DT API 
-$objectId_B = '' 
+#this section looks up the objectId values for the agent update maintenance windows, based on the name values provided
+#declare vars for objectId A and B and assign them values from API query
+
+$objectId_A = ''
+$objectId_B = ''
+$window_A =  'host_A_window'
+$window_B = 'host_B_window'
+$DT_URL = 'https://dynatrace-domain.com/e/environmentID/api/v2/settings/objects?schemaIds=builtin%3Adeployment.mananagement.update-windows&scopes=environment&fields=objectId%2cvalue'
+
+$headers = @{
+    'accept' = '*/*'
+    'Authorization' = 'Api-Token ' + $token 
+}
+
+$windows = Invoke-WebRequest -Uri $DT_URL -Method Get -ContentType "application/json" -Headers $headers
+$windows = $windows.content | ConvertFrom-Json
+$count = $windows.totalCount 
+
+for ($i = 0; $i -lt $count; $i++) {
+    $name = $windows.items[$i].value.name
+    
+    if ($name -eq $window_A) {
+        $objectId_A = $windows.items[$i].objectId
+    }
+
+    if ($name -eq $window_B) {
+        $objectId_B = $windows.items[$i].objectId
+    }
+}
+
 
 #assign the hosts in group A to maintenance window A 
 foreach ($i in $host_id_A) {
